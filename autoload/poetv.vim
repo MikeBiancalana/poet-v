@@ -56,15 +56,16 @@ function! poetv#activate() abort
             if v:shell_error == 0 && !empty(poetv_out_list)
                 if len(poetv_out_list) == 1
                     let poetv_out = poetv_out_list[0]
+                else
+                    for i in poetv_out_list
+                        " Only poetry allows for multiple envs and signals the active
+                        " env with an `Activated` keyword
+                        if match (i, '\S*\s\+\zs(Activated)\ze') != -1
+                            let poetv_out =  i
+                            break
+                        endif
+                    endfor
                 endif
-                for i in poetv_out_list
-                    " Only poetry allows for multiple envs and signals the active
-                    " env with an `Activated` keyword
-                    if match (i, '\S*\s\+\zs(Activated)\ze') != -1
-                        let poetv_out =  i
-                        break
-                    endif
-                endfor
                 let poetv_out = substitute(poetv_out, ' (Activated)$', '', '')
                 call setbufvar(curr_buffer_name, 'poetv_dir', poetv_out)
                 break
@@ -118,7 +119,7 @@ function! s:get_venv_cmd(executable) abort
         " is fixed: https://github.com/python-poetry/poetry/issues/1870
         let venv_cmd = 'poetry env list --full-path'
     elseif a:executable ==# 'pipenv'
-        let venv_cmd = 'pipenv --venv'
+        let venv_cmd = 'pipenv --venv -q'
     else
        echoerr 'Valid options are `poetry` and `pipenv`'
     endif
